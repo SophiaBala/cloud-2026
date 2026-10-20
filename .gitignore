@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+.env
+*.tfvars
+.terraform/
+*.tfstate*
+config/app.yml
+config/app-new.yaml
+**/config/app.yml
+**/config/app-new.yaml
