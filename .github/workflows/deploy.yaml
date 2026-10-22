@@ -1,4 +1,5 @@
 name: deploy
+
 on:
   push:
     branches: [main]
@@ -9,21 +10,16 @@ permissions:
 
 env:
   AWS_REGION: eu-central-1
-  ECR_REPO: lab1cloud
-  ECS_CLUSTER: lab1cloud
-  ECS_SERVICE: lab1cloud
+  ECR_REPO: myapp
+  ECS_CLUSTER: myapp-cluster
+  ECS_SERVICE: myapp-svc
+  TASK_FAMILY: myapp
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Show OIDC claims
-        run: |
-          TOKEN=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | jq -r .value)
-          echo "$TOKEN" | cut -d. -f2 | tr '_-' '/+' | base64 -d 2>/dev/null | jq '{sub, aud, repository, ref}'
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -43,7 +39,7 @@ jobs:
 
       - name: Download current task definition
         run: |
-          aws ecs describe-task-definition --task-definition ${{ env.ECS_SERVICE }} \
+          aws ecs describe-task-definition --task-definition ${{ env.TASK_FAMILY }} \
             --query taskDefinition > task-def.json
 
       - id: render

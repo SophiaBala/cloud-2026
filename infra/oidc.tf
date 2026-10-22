@@ -16,9 +16,9 @@ data "aws_iam_policy_document" "gh_trust" {
       values   = ["sts.amazonaws.com"]
     }
     condition {
-      test     = "StringLike"
+      test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:SophiaBala@114072833/cloud-2026@1427476593:ref:refs/heads/main"]
+      values   = ["repo:${var.github_repo}:ref:refs/heads/main"]
     }
   }
 }
@@ -43,7 +43,11 @@ resource "aws_iam_role_policy" "github" {
         Action = ["ecs:DescribeTaskDefinition", "ecs:RegisterTaskDefinition",
                   "ecs:DescribeServices", "ecs:UpdateService"],
         Resource = "*" },
-      { Effect = "Allow", Action = ["iam:PassRole"], Resource = aws_iam_role.exec.arn }
+      { Effect = "Allow", Action = ["iam:PassRole"], Resource = aws_iam_role.task_exec.arn }
     ]
   })
+}
+
+output "github_role_arn" {
+  value = aws_iam_role.github.arn
 }
