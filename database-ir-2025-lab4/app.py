@@ -2,6 +2,8 @@ import os
 from flask import Flask
 from my_project import db
 from my_project.auth.domain import Shop, Products, ShopProducts
+import time
+from sqlalchemy.exc import OperationalError, DatabaseError
 
 from my_project.auth.route.shop_route import shop_bp
 from my_project.auth.route.products_route import products_bp
@@ -27,8 +29,15 @@ app.register_blueprint(categories_bp)
 app.register_blueprint(staff_bp)
 
 with app.app_context():
-    db.create_all()
-
+    for attempt in range(20):
+        try:
+            db.create_all()
+            break
+        except (OperationalError, DatabaseError):
+            print(f"DB not ready, retry {attempt + 1}/20", flush=True)
+            time.sleep(3)
+    else:
+        raise RuntimeError("Database is unavailable")
 
 @app.route("/health")
 def health():

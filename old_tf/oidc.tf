@@ -18,7 +18,7 @@ data "aws_iam_policy_document" "gh_trust" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repo}:ref:refs/heads/main"]
+      values   = ["repo:SophiaBala@114072833/cloud-2026@1427476593:ref:refs/heads/main"]
     }
   }
 }
