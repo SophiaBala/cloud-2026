@@ -13,6 +13,7 @@ services:
 
   app:
     build: ./database-ir-2025-lab4
+    restart: on-failure
     ports:
       - "8000:8000"
     environment:
