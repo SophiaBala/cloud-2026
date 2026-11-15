@@ -103,3 +103,4 @@ def test_worker_ignores_redelivered_message():
     assert job.get("duplicate_delivery") is True
     assert job["shop_id"] == original_shop_id
     assert inserts() - before == 0
+    
