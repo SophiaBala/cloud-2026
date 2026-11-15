@@ -35,7 +35,12 @@ variable "db_password" {
   sensitive = true
 }
 
-variable "app_dir" {
+variable "budget_email" {
+  type        = string
+  description = "Email for budget alerts"
+}
+
+variable "budget_limit_usd" {
   type    = string
-  default = "./database-ir-2025-lab4"
+  default = "10"
 }

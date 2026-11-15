@@ -58,11 +58,11 @@ resource "aws_ecs_task_definition" "app" {
     portMappings = [{ containerPort = var.container_port }]
 
     environment = [
-      { name = "PORT",        value = tostring(var.container_port) },
-      { name = "DB_HOST",     value = aws_db_instance.mysql.address },
-      { name = "DB_PORT",     value = "3306" },
-      { name = "DB_NAME",     value = var.db_name },
-      { name = "DB_USER",     value = var.db_username },
+      { name = "PORT", value = tostring(var.container_port) },
+      { name = "DB_HOST", value = aws_db_instance.mysql.address },
+      { name = "DB_PORT", value = "3306" },
+      { name = "DB_NAME", value = var.db_name },
+      { name = "DB_USER", value = var.db_username },
       { name = "DB_PASSWORD", value = var.db_password },
     ]
 
@@ -86,9 +86,9 @@ resource "aws_ecs_service" "app" {
   health_check_grace_period_seconds = 180
 
   network_configuration {
-    subnets          = aws_subnet.public[*].id
+    subnets          = aws_subnet.private[*].id
     security_groups  = [aws_security_group.app.id]
-    assign_public_ip = true
+    assign_public_ip = false
   }
 
   load_balancer {
@@ -97,7 +97,12 @@ resource "aws_ecs_service" "app" {
     container_port   = var.container_port
   }
 
-  depends_on = [aws_lb_listener.http, null_resource.initial_image]
+  depends_on = [
+    aws_lb_listener.http,
+    null_resource.initial_image,
+    aws_vpc_endpoint.interface,
+    aws_vpc_endpoint.s3,
+  ]
 
   lifecycle {
     ignore_changes = [task_definition]

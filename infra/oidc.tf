@@ -36,13 +36,13 @@ resource "aws_iam_role_policy" "github" {
       { Effect = "Allow", Action = ["ecr:GetAuthorizationToken"], Resource = "*" },
       { Effect = "Allow",
         Action = ["ecr:BatchCheckLayerAvailability", "ecr:InitiateLayerUpload",
-                  "ecr:UploadLayerPart", "ecr:CompleteLayerUpload", "ecr:PutImage",
-                  "ecr:BatchGetImage", "ecr:GetDownloadUrlForLayer"],
-        Resource = aws_ecr_repository.app.arn },
+          "ecr:UploadLayerPart", "ecr:CompleteLayerUpload", "ecr:PutImage",
+        "ecr:BatchGetImage", "ecr:GetDownloadUrlForLayer"],
+      Resource = aws_ecr_repository.app.arn },
       { Effect = "Allow",
         Action = ["ecs:DescribeTaskDefinition", "ecs:RegisterTaskDefinition",
-                  "ecs:DescribeServices", "ecs:UpdateService"],
-        Resource = "*" },
+        "ecs:DescribeServices", "ecs:UpdateService"],
+      Resource = "*" },
       { Effect = "Allow", Action = ["iam:PassRole"], Resource = aws_iam_role.task_exec.arn }
     ]
   })

@@ -2,5 +2,5 @@
 __pycache__
 *.pyc
 .git
-.envconfig/app.yml
-config/app-new.yaml
+.env
+config/
