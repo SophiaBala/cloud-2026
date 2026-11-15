@@ -1,15 +1,41 @@
 from flask import Blueprint, request, jsonify
+from my_project import cache
 from my_project.auth.service.shop_service import ShopService
+from my_project.auth.domain.staff import Staff
 
 shop_bp = Blueprint('shop_bp', __name__)
 
+DEFAULT_LIMIT = 50
+MAX_LIMIT = 200
+
+def _shop_json(s):
+    return {"id": s.idshop, "address": s.address, "phone": s.phone, "city": s.city}
+
 @shop_bp.route('/shop', methods=['GET'])
 def get_shop():
-    shops = ShopService.get_all_shops()
-    return jsonify([
-        {"id": s.idshop, "address": s.address, "phone": s.phone, "city": s.city} for s in shops
-    ])
-    
+    limit = max(1, min(request.args.get('limit', DEFAULT_LIMIT, type=int), MAX_LIMIT))
+    key = f"shops:list:{limit}"
+
+    data, status = cache.get_json(key)
+    if data is None:
+        data = [_shop_json(s) for s in ShopService.get_latest_shops(limit)]
+        cache.set_json(key, data)
+
+    resp = jsonify(data)
+    resp.headers['X-Cache'] = status
+    return resp
+
+@shop_bp.route('/shop/<int:shop_id>', methods=['GET'])
+def get_shop_by_id(shop_id):
+    shop = ShopService.get_shop(shop_id)
+    if not shop:
+        return jsonify({"error": "Shop not found"}), 404
+    return jsonify(_shop_json(shop))
+
+@shop_bp.route('/shop/<int:shop_id>/staff', methods=['GET'])
+def get_shop_staff(shop_id):
+    staff = Staff.query.filter_by(shop_idshop=shop_id).all()
+    return jsonify([s.to_dict() for s in staff])
 
 @shop_bp.route('/shop', methods=['POST'])
 def create_shop():
@@ -23,21 +49,13 @@ def create_shop():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @shop_bp.route('/shop/<int:shop_id>', methods=['PUT'])
 def update_shop(shop_id):
     data = request.get_json()
     shop = ShopService.update_shop(shop_id, data)
     if shop:
-        return jsonify({
-            "id": shop.idshop,
-            "address": shop.address,
-            "phone": shop.phone,
-            "city": shop.city
-        })
+        return jsonify(_shop_json(shop))
     return jsonify({"error": "Shop not found"}), 404
-
-
 
 @shop_bp.route('/shop/<int:shop_id>', methods=['DELETE'])
 def delete_shop(shop_id):

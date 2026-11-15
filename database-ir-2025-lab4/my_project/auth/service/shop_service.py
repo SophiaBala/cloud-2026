@@ -6,6 +6,14 @@ class ShopService:
     def get_all_shops():
         return ShopDAO.get_all()
 
+    @staticmethod
+    def get_latest_shops(limit):
+        return ShopDAO.get_latest(limit)
+
+    @staticmethod
+    def get_shop(shop_id):
+        return ShopDAO.get_by_id(shop_id)
+
 
     @staticmethod
     def create_shop(data):

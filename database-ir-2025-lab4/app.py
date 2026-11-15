@@ -1,6 +1,7 @@
 import os
 from flask import Flask
-from my_project import db
+from my_project import db, cache
+from sqlalchemy import text
 from my_project.auth.domain import Shop, Products, ShopProducts
 import time
 from sqlalchemy.exc import OperationalError, DatabaseError
@@ -42,6 +43,13 @@ with app.app_context():
 @app.route("/health")
 def health():
     return {"status": "ok"}, 200
+
+@app.route("/stats")
+def stats():
+    rows = db.session.execute(text(
+        "SHOW GLOBAL STATUS WHERE Variable_name IN ('Questions', 'Com_select', 'Com_insert')"
+    )).all()
+    return {"db": {name: int(value) for name, value in rows}, "cache": cache.stats()}, 200
 
 @app.route("/")
 def index():

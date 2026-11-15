@@ -7,8 +7,12 @@ class ShopDAO:
         return Shop.query.all()
 
     @staticmethod
+    def get_latest(limit):
+        return Shop.query.order_by(Shop.idshop.desc()).limit(limit).all()
+
+    @staticmethod
     def get_by_id(shop_id):
-        return Shop.query.get(shop_id)
+        return db.session.get(Shop, shop_id)
 
     @staticmethod
     def create(data):

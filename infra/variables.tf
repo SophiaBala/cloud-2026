@@ -44,3 +44,38 @@ variable "budget_limit_usd" {
   type    = string
   default = "10"
 }
+
+variable "alert_email" {
+  type        = string
+  default     = null
+  description = "Email for CloudWatch alarms; defaults to budget_email"
+}
+
+variable "autoscaling_min" {
+  type    = number
+  default = 1
+}
+
+variable "autoscaling_max" {
+  type    = number
+  default = 4
+  validation {
+    condition     = var.autoscaling_max <= 4
+    error_message = "Lab limit: no more than 4 tasks."
+  }
+}
+
+variable "cpu_target" {
+  type    = number
+  default = 60
+}
+
+variable "cache_enabled" {
+  type    = bool
+  default = true
+}
+
+variable "cache_ttl_seconds" {
+  type    = number
+  default = 45
+}

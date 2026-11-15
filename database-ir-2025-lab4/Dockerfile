@@ -10,4 +10,4 @@ RUN useradd -m appuser && chown -R appuser /app
 USER appuser
 
 EXPOSE 8000
-CMD ["python", "-m", "gunicorn", "-b", "0.0.0.0:8000", "app:app"]
+CMD ["python", "-m", "gunicorn", "-b", "0.0.0.0:8000", "--workers", "2", "--threads", "4", "--timeout", "30", "app:app"]

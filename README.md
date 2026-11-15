@@ -60,3 +60,17 @@ ARN ролі записати в GitHub: Settings → Secrets and variables → 
 - Health check ALB — `GET /health`.
 - Секрети не комітяться: пароль бази передається через `terraform.tfvars` / `.env` у змінні середовища контейнера.
 - GitHub Actions отримує доступ до AWS через OIDC і роль `myapp-github`, обмежену гілкою `main` цього репозиторію; довговічних ключів немає.
+
+## Лабораторна 2: масштабування, моніторинг, кеш
+
+| Що | Код | Документ |
+|---|---|---|
+| Автомасштабування ECS за CPU (1–4 задачі, ціль 60 %) | `infra/autoscaling.tf` | [docs/AUTOSCALING.md](docs/AUTOSCALING.md) |
+| Сценарій k6 «1 запис + 9 читань» | `loadtest/` | [docs/LOADTEST.md](docs/LOADTEST.md) |
+| Панель CloudWatch (`terraform output dashboard_url`) | `infra/monitoring.tf` | [docs/AUTOSCALING.md](docs/AUTOSCALING.md) |
+| Аларм CPU > 70 % 2 хв → email (ALARM і OK) | `infra/monitoring.tf` | [docs/ALERTS.md](docs/ALERTS.md) |
+| Cache-aside для `GET /shop` на ElastiCache (Valkey) | `infra/cache.tf`, `my_project/cache.py` | [docs/CACHE.md](docs/CACHE.md) |
+
+Нові ендпоінти: `GET /shop?limit=N` (останні N, за замовчуванням 50, кешується), `GET /shop/{id}`, `GET /shop/{id}/staff`, `GET /stats` (лічильники запитів MySQL і влучань у кеш для звітів).
+
+Додаткові змінні в `terraform.tfvars` (необов'язкові): `alert_email`, `cache_enabled`, `cache_ttl_seconds`, `cpu_target`.

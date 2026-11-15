@@ -63,3 +63,16 @@ resource "aws_vpc_security_group_ingress_rule" "endpoints_from_app" {
   from_port                    = 443
   to_port                      = 443
 }
+
+resource "aws_security_group" "cache" {
+  name   = "${var.project}-cache"
+  vpc_id = aws_vpc.main.id
+}
+
+resource "aws_vpc_security_group_ingress_rule" "cache_from_app" {
+  security_group_id            = aws_security_group.cache.id
+  referenced_security_group_id = aws_security_group.app.id
+  ip_protocol                  = "tcp"
+  from_port                    = 6379
+  to_port                      = 6379
+}

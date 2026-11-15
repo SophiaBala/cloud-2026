@@ -19,8 +19,19 @@ resource "aws_cloudwatch_log_group" "app" {
   retention_in_days = 7
 }
 
+resource "aws_cloudwatch_log_group" "container_insights" {
+  name              = "/aws/ecs/containerinsights/${var.project}-cluster/performance"
+  retention_in_days = 1
+}
+
 resource "aws_ecs_cluster" "main" {
-  name = "${var.project}-cluster"
+  name       = "${var.project}-cluster"
+  depends_on = [aws_cloudwatch_log_group.container_insights]
+
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
 }
 
 data "aws_iam_policy_document" "ecs_assume" {
@@ -64,6 +75,9 @@ resource "aws_ecs_task_definition" "app" {
       { name = "DB_NAME", value = var.db_name },
       { name = "DB_USER", value = var.db_username },
       { name = "DB_PASSWORD", value = var.db_password },
+      { name = "REDIS_URL", value = "rediss://${aws_elasticache_replication_group.cache.primary_endpoint_address}:6379/0" },
+      { name = "CACHE_ENABLED", value = tostring(var.cache_enabled) },
+      { name = "CACHE_TTL", value = tostring(var.cache_ttl_seconds) },
     ]
 
     logConfiguration = {
@@ -105,6 +119,6 @@ resource "aws_ecs_service" "app" {
   ]
 
   lifecycle {
-    ignore_changes = [task_definition]
+    ignore_changes = [task_definition, desired_count]
   }
 }
