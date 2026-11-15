@@ -4,6 +4,10 @@ resource "aws_appautoscaling_target" "ecs" {
   scalable_dimension = "ecs:service:DesiredCount"
   min_capacity       = var.autoscaling_min
   max_capacity       = var.autoscaling_max
+
+  lifecycle {
+    ignore_changes = [min_capacity, max_capacity]
+  }
 }
 
 resource "aws_appautoscaling_policy" "cpu" {

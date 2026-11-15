@@ -16,7 +16,7 @@ services:
     restart: on-failure
     ports:
       - "8000:8000"
-    environment:
+    environment: &app_env
       DB_HOST: db
       DB_PORT: 3306
       DB_NAME: appdb
@@ -25,14 +25,36 @@ services:
       REDIS_URL: redis://cache:6379/0
       CACHE_ENABLED: ${CACHE_ENABLED:-true}
       CACHE_TTL: ${CACHE_TTL:-45}
-    depends_on:
+      QUEUE_URL: http://sqs:9324/000000000000/shop-writes
+      SQS_ENDPOINT_URL: http://sqs:9324
+      AWS_REGION: eu-central-1
+      AWS_ACCESS_KEY_ID: local
+      AWS_SECRET_ACCESS_KEY: local
+      WORKER_DELAY_MS: ${WORKER_DELAY_MS:-200}
+    depends_on: &app_deps
       db:
         condition: service_healthy
       cache:
         condition: service_started
+      sqs:
+        condition: service_started
+
+  worker:
+    build: ./database-ir-2025-lab4
+    command: ["python", "worker.py"]
+    restart: on-failure
+    environment: *app_env
+    depends_on: *app_deps
 
   cache:
     image: valkey/valkey:8.0-alpine
+
+  sqs:
+    image: softwaremill/elasticmq-native:1.6.11
+    ports:
+      - "9324:9324"
+    volumes:
+      - ./local/elasticmq.conf:/opt/elasticmq.conf:ro
 
 volumes:
   db_data:

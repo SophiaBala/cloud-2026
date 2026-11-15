@@ -21,3 +21,7 @@ output "db_endpoint" {
 output "dashboard_url" {
   value = "https://${var.region}.console.aws.amazon.com/cloudwatch/home?region=${var.region}#dashboards/dashboard/${aws_cloudwatch_dashboard.main.dashboard_name}"
 }
+
+output "queue_url" {
+  value = aws_sqs_queue.writes.url
+}

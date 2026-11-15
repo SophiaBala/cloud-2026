@@ -15,6 +15,8 @@ env:
   ECS_CLUSTER: myapp-cluster
   ECS_SERVICE: myapp-svc
   TASK_FAMILY: myapp
+  WORKER_SERVICE: myapp-worker-svc
+  WORKER_FAMILY: myapp-worker
 
 jobs:
   deploy:
@@ -38,10 +40,12 @@ jobs:
           docker push $IMAGE
           echo "image=$IMAGE" >> $GITHUB_OUTPUT
 
-      - name: Download current task definition
+      - name: Download current task definitions
         run: |
           aws ecs describe-task-definition --task-definition ${{ env.TASK_FAMILY }} \
             --query taskDefinition > task-def.json
+          aws ecs describe-task-definition --task-definition ${{ env.WORKER_FAMILY }} \
+            --query taskDefinition > worker-task-def.json
 
       - id: render
         uses: aws-actions/amazon-ecs-render-task-definition@v1
@@ -54,5 +58,19 @@ jobs:
         with:
           task-definition: ${{ steps.render.outputs.task-definition }}
           service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+
+      - id: render-worker
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: worker-task-def.json
+          container-name: worker
+          image: ${{ steps.build.outputs.image }}
+
+      - uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render-worker.outputs.task-definition }}
+          service: ${{ env.WORKER_SERVICE }}
           cluster: ${{ env.ECS_CLUSTER }}
           wait-for-service-stability: true

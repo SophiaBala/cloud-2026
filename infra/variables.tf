@@ -79,3 +79,42 @@ variable "cache_ttl_seconds" {
   type    = number
   default = 45
 }
+
+variable "worker_delay_ms" {
+  type    = number
+  default = 200
+}
+
+variable "worker_max" {
+  type    = number
+  default = 4
+  validation {
+    condition     = var.worker_max <= 4
+    error_message = "Lab limit: no more than 4 tasks."
+  }
+}
+
+variable "schedule_timezone" {
+  type    = string
+  default = "Europe/Kiev"
+}
+
+variable "schedule_day_cron" {
+  type    = string
+  default = "cron(0 8 * * ? *)"
+}
+
+variable "schedule_night_cron" {
+  type    = string
+  default = "cron(0 23 * * ? *)"
+}
+
+variable "day_min_tasks" {
+  type    = number
+  default = 2
+}
+
+variable "night_min_tasks" {
+  type    = number
+  default = 1
+}

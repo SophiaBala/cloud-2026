@@ -14,6 +14,19 @@ resource "null_resource" "initial_image" {
   }
 }
 
+locals {
+  app_env = [
+    { name = "DB_HOST", value = aws_db_instance.mysql.address },
+    { name = "DB_PORT", value = "3306" },
+    { name = "DB_NAME", value = var.db_name },
+    { name = "DB_USER", value = var.db_username },
+    { name = "DB_PASSWORD", value = var.db_password },
+    { name = "REDIS_URL", value = "rediss://${aws_elasticache_replication_group.cache.primary_endpoint_address}:6379/0" },
+    { name = "QUEUE_URL", value = aws_sqs_queue.writes.url },
+    { name = "AWS_REGION", value = var.region },
+  ]
+}
+
 resource "aws_cloudwatch_log_group" "app" {
   name              = "/ecs/${var.project}"
   retention_in_days = 7
@@ -61,6 +74,7 @@ resource "aws_ecs_task_definition" "app" {
   cpu                      = 256
   memory                   = 512
   execution_role_arn       = aws_iam_role.task_exec.arn
+  task_role_arn            = aws_iam_role.api_task.arn
 
   container_definitions = jsonencode([{
     name         = "app"
@@ -68,17 +82,11 @@ resource "aws_ecs_task_definition" "app" {
     essential    = true
     portMappings = [{ containerPort = var.container_port }]
 
-    environment = [
+    environment = concat(local.app_env, [
       { name = "PORT", value = tostring(var.container_port) },
-      { name = "DB_HOST", value = aws_db_instance.mysql.address },
-      { name = "DB_PORT", value = "3306" },
-      { name = "DB_NAME", value = var.db_name },
-      { name = "DB_USER", value = var.db_username },
-      { name = "DB_PASSWORD", value = var.db_password },
-      { name = "REDIS_URL", value = "rediss://${aws_elasticache_replication_group.cache.primary_endpoint_address}:6379/0" },
       { name = "CACHE_ENABLED", value = tostring(var.cache_enabled) },
       { name = "CACHE_TTL", value = tostring(var.cache_ttl_seconds) },
-    ]
+    ])
 
     logConfiguration = {
       logDriver = "awslogs"

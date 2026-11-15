@@ -132,10 +132,58 @@ resource "aws_cloudwatch_dashboard" "main" {
         }
       },
       {
-        type = "alarm", x = 0, y = 18, width = 24, height = 3
+        type = "metric", x = 0, y = 18, width = 8, height = 6
         properties = {
-          title  = "Alarms"
-          alarms = [aws_cloudwatch_metric_alarm.cpu_high.arn]
+          title  = "Queue: messages"
+          region = var.region
+          view   = "timeSeries"
+          period = 60
+          stat   = "Maximum"
+          metrics = [
+            ["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", aws_sqs_queue.writes.name, { label = "Waiting" }],
+            [".", "ApproximateNumberOfMessagesNotVisible", ".", ".", { label = "In flight" }],
+            [".", "ApproximateNumberOfMessagesVisible", ".", aws_sqs_queue.writes_dlq.name, { label = "DLQ", color = "#d62728" }],
+          ]
+        }
+      },
+      {
+        type = "metric", x = 8, y = 18, width = 8, height = 6
+        properties = {
+          title  = "Worker tasks: desired vs running"
+          region = var.region
+          view   = "timeSeries"
+          stat   = "Average"
+          period = 60
+          metrics = [
+            ["ECS/ContainerInsights", "DesiredTaskCount", "ClusterName", aws_ecs_cluster.main.name, "ServiceName", aws_ecs_service.worker.name, { label = "Desired" }],
+            [".", "RunningTaskCount", ".", ".", ".", ".", { label = "Running" }],
+          ]
+          yAxis = { left = { min = 0, max = var.worker_max + 1 } }
+        }
+      },
+      {
+        type = "metric", x = 16, y = 18, width = 8, height = 6
+        properties = {
+          title  = "Queue: oldest message age, s / sent per min"
+          region = var.region
+          view   = "timeSeries"
+          period = 60
+          metrics = [
+            ["AWS/SQS", "ApproximateAgeOfOldestMessage", "QueueName", aws_sqs_queue.writes.name, { stat = "Maximum", label = "Oldest message age" }],
+            [".", "NumberOfMessagesSent", ".", ".", { stat = "Sum", label = "Sent/min", yAxis = "right" }],
+            [".", "NumberOfMessagesDeleted", ".", ".", { stat = "Sum", label = "Processed/min", yAxis = "right" }],
+          ]
+        }
+      },
+      {
+        type = "alarm", x = 0, y = 24, width = 24, height = 3
+        properties = {
+          title = "Alarms"
+          alarms = [
+            aws_cloudwatch_metric_alarm.cpu_high.arn,
+            aws_cloudwatch_metric_alarm.queue_backlog.arn,
+            aws_cloudwatch_metric_alarm.queue_idle.arn,
+          ]
         }
       },
     ]

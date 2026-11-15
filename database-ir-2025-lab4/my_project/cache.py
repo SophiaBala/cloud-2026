@@ -4,19 +4,14 @@ import os
 
 import redis
 
+from my_project.redis_client import get_client
+
 log = logging.getLogger(__name__)
 
 ENABLED = os.environ.get("CACHE_ENABLED", "false").lower() in ("1", "true", "yes")
 TTL = int(os.environ.get("CACHE_TTL", "45"))
 
-_client = None
-if ENABLED and os.environ.get("REDIS_URL"):
-    _client = redis.Redis.from_url(
-        os.environ["REDIS_URL"],
-        socket_timeout=0.3,
-        socket_connect_timeout=0.5,
-        health_check_interval=30,
-    )
+_client = get_client() if ENABLED else None
 
 def get_json(key):
     if _client is None:

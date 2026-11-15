@@ -21,8 +21,10 @@ http://myapp-alb-987737443.eu-central-1.elb.amazonaws.com/
 
 ## Локальний запуск
 
+Скопіюйте `.env.example` у `.env` і вкажіть у ньому свій `DB_PASSWORD`:
+
 ```bash
-cp .env.example .env   # вказати свій DB_PASSWORD
+cp .env.example .env
 docker compose up --build
 curl localhost:8000/health
 ```
@@ -44,9 +46,11 @@ budget_email = "you@example.com"
 ```bash
 cd infra
 terraform init
-terraform apply      # також збирає і пушить початковий образ (потрібні docker і aws cli)
+terraform apply
 terraform output github_role_arn
 ```
+
+`terraform apply` також збирає і пушить початковий образ, тому локально потрібні `docker` і `aws` CLI.
 
 ARN ролі записати в GitHub: Settings → Secrets and variables → Actions → Variables → `AWS_ROLE_ARN`.
 
@@ -71,6 +75,10 @@ ARN ролі записати в GitHub: Settings → Secrets and variables → 
 | Аларм CPU > 70 % 2 хв → email (ALARM і OK) | `infra/monitoring.tf` | [docs/ALERTS.md](docs/ALERTS.md) |
 | Cache-aside для `GET /shop` на ElastiCache (Valkey) | `infra/cache.tf`, `my_project/cache.py` | [docs/CACHE.md](docs/CACHE.md) |
 
-Нові ендпоінти: `GET /shop?limit=N` (останні N, за замовчуванням 50, кешується), `GET /shop/{id}`, `GET /shop/{id}/staff`, `GET /stats` (лічильники запитів MySQL і влучань у кеш для звітів).
+| Бонус: черга SQS + обробник, що масштабується від 0 до 4 | `infra/sqs.tf`, `infra/worker.tf`, `worker.py` | [docs/QUEUE.md](docs/QUEUE.md) |
+| Бонус: `Idempotency-Key` для записів | `my_project/idempotency.py`, `tests/` | [docs/IDEMPOTENCY.md](docs/IDEMPOTENCY.md) |
+| Бонус: розклад, удень мінімум 2 задачі, уночі 1 | `infra/schedule.tf` | [docs/SCHEDULE.md](docs/SCHEDULE.md) |
+
+Нові ендпоінти: `GET /shop?limit=N` (останні N, за замовчуванням 50, кешується), `GET /shop/{id}`, `GET /shop/{id}/staff`, `GET /stats` (лічильники запитів MySQL і влучань у кеш для звітів), `POST /shop/async` (202, запис через чергу), `GET /jobs/{id}` (статус асинхронної задачі). `POST /shop` і `POST /shop/async` приймають заголовок `Idempotency-Key`.
 
 Додаткові змінні в `terraform.tfvars` (необов'язкові): `alert_email`, `cache_enabled`, `cache_ttl_seconds`, `cpu_target`.

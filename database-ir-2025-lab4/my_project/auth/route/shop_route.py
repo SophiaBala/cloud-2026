@@ -1,5 +1,9 @@
-from flask import Blueprint, request, jsonify
-from my_project import cache
+import logging
+import uuid
+
+from flask import Blueprint, request, jsonify, url_for
+from my_project import cache, jobs, queue
+from my_project.idempotency import idempotent
 from my_project.auth.service.shop_service import ShopService
 from my_project.auth.domain.staff import Staff
 
@@ -38,6 +42,7 @@ def get_shop_staff(shop_id):
     return jsonify([s.to_dict() for s in staff])
 
 @shop_bp.route('/shop', methods=['POST'])
+@idempotent
 def create_shop():
     data = request.get_json()
     if not data:
@@ -48,6 +53,41 @@ def create_shop():
         return jsonify(new_shop.to_dict()), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@shop_bp.route('/shop/async', methods=['POST'])
+@idempotent
+def create_shop_async():
+    data = request.get_json(silent=True)
+    if not data or not data.get('phone') or not data.get('city'):
+        return jsonify({"error": "Fields 'phone' and 'city' are required"}), 400
+    if not queue.enabled():
+        return jsonify({"error": "Queue is not configured"}), 503
+
+    job_id = str(uuid.uuid4())
+    payload = {k: data.get(k) for k in ('address', 'phone', 'city')}
+    try:
+        jobs.save(job_id, "queued")
+        queue.send({"job_id": job_id, "op": "create_shop", "data": payload})
+    except Exception as e:
+        logging.getLogger(__name__).exception("enqueue failed")
+        try:
+            jobs.save(job_id, "failed", error="enqueue failed")
+        except Exception:
+            pass
+        return jsonify({"error": f"Could not enqueue: {e}"}), 503
+
+    status_url = url_for('shop_bp.get_job', job_id=job_id)
+    resp = jsonify({"job_id": job_id, "status": "queued", "status_url": status_url})
+    resp.status_code = 202
+    resp.headers['Location'] = status_url
+    return resp
+
+@shop_bp.route('/jobs/<job_id>', methods=['GET'])
+def get_job(job_id):
+    job = jobs.get(job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+    return jsonify(job)
 
 @shop_bp.route('/shop/<int:shop_id>', methods=['PUT'])
 def update_shop(shop_id):
