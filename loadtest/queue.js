@@ -6,7 +6,7 @@ import { textSummary } from 'https://jslib.k6.io/k6-summary/0.1.0/index.js';
 
 const BASE_URL = (__ENV.BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
 const RATE = parseInt(__ENV.RATE || '15', 10);
-const RAMP_UP = __ENV.RAMP_UP || '2m';
+const RAMP_UP = __ENV.RAMP_UP || '3m';
 const STEADY = __ENV.STEADY || '5m';
 const RAMP_DOWN = __ENV.RAMP_DOWN || '2m';
 const LABEL = __ENV.LABEL || 'queue';
